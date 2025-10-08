@@ -1,0 +1,48 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { verifySession } from "@/lib/auth/session"
+import { getDb } from "@/lib/mongodb"
+import { ObjectId } from "mongodb"
+import bcrypt from "bcryptjs"
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await verifySession()
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { password, newPin } = await request.json()
+
+    if (!password || !newPin) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+      return NextResponse.json({ error: "PIN must be exactly 4 digits" }, { status: 400 })
+    }
+
+    const db = await getDb()
+    const user = await db.collection("users").findOne({ _id: new ObjectId(session.userId) })
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+    if (!isPasswordValid) {
+      return NextResponse.json({ error: "Password is incorrect" }, { status: 401 })
+    }
+
+    // Hash new PIN
+    const hashedPin = await bcrypt.hash(newPin, 10)
+
+    // Update PIN
+    await db.collection("users").updateOne({ _id: new ObjectId(session.userId) }, { $set: { pin: hashedPin } })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Reset PIN error:", error)
+    return NextResponse.json({ error: "Failed to reset PIN" }, { status: 500 })
+  }
+}
