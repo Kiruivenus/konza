@@ -13,6 +13,8 @@ export interface User {
   kycStatus: "Pending" | "Approved" | "Rejected" | "Not Submitted"
   referralCode: string
   referredBy?: string
+  status?: "active" | "banned" | "suspended"
+  restrictions?: string[] // Array of restricted features: "swap", "mine", "transfer"
   profile: {
     firstName?: string
     lastName?: string
@@ -31,12 +33,14 @@ export interface User {
 export interface Transaction {
   _id?: ObjectId
   hash: string
-  type: "send" | "receive" | "mining" | "referral" | "swap"
+  type: "send" | "receive" | "mining" | "referral" | "swap" | "admin_distribution"
   sender: string
   receiver: string
   amount: number
   fee: number
   status: "Success" | "Pending" | "Failed"
+  comment?: string
+  distributedBy?: string
   timestamp: Date
 }
 
@@ -119,7 +123,7 @@ export interface Referral {
   referredId: ObjectId
   referredUsername: string
   bonusAmount: number
-  status: "Pending" | "Completed"
+  status: "pending" | "completed"
   createdAt: Date
   completedAt?: Date
 }

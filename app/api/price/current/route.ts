@@ -26,13 +26,23 @@ export async function GET() {
     let currentPrice = priceConfig.basePrice
 
     if (priceConfig.trend === "rising") {
-      // Linear interpolation from basePrice to targetPrice
       const priceDiff = priceConfig.targetPrice - priceConfig.basePrice
-      currentPrice = priceConfig.basePrice + priceDiff * progress
+      const trendPrice = priceConfig.basePrice + priceDiff * progress
+
+      // Add random fluctuation around the trend line (±2% volatility)
+      const volatilityRange = trendPrice * 0.02
+      const randomFactor = (Math.random() - 0.5) * 2 // -1 to 1
+      const volatility = volatilityRange * randomFactor
+      currentPrice = trendPrice + volatility
     } else if (priceConfig.trend === "falling") {
-      // Linear interpolation from basePrice to targetPrice (downward)
       const priceDiff = priceConfig.basePrice - priceConfig.targetPrice
-      currentPrice = priceConfig.basePrice - priceDiff * progress
+      const trendPrice = priceConfig.basePrice - priceDiff * progress
+
+      // Add random fluctuation around the trend line (±2% volatility)
+      const volatilityRange = trendPrice * 0.02
+      const randomFactor = (Math.random() - 0.5) * 2 // -1 to 1
+      const volatility = volatilityRange * randomFactor
+      currentPrice = trendPrice + volatility
     } else if (priceConfig.trend === "stable") {
       // Random fluctuation within range
       const fluctuationRange = priceConfig.stableFluctuationRange || 0.5

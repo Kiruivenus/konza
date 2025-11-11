@@ -30,6 +30,8 @@ export async function GET() {
         referralCode: user.referralCode,
         role: user.role,
         profile: user.profile,
+        restrictions: user.restrictions || [],
+        status: user.status || "active",
       },
     })
   } catch (error) {

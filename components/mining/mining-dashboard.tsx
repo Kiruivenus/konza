@@ -4,8 +4,9 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Loader2, Pickaxe, Clock, Coins, TrendingUp, Timer } from "lucide-react"
+import { Loader2, Pickaxe, Clock, Coins, TrendingUp, Timer, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface MiningSession {
   _id: string
@@ -34,7 +35,28 @@ export function MiningDashboard() {
   const [loading, setLoading] = useState(true)
   const [starting, setStarting] = useState(false)
   const [claiming, setClaiming] = useState(false)
+  const [userRestriction, setUserRestriction] = useState<string | null>(null)
+  const [userStatus, setUserStatus] = useState<string>("active")
   const { toast } = useToast()
+
+  const fetchUserRestrictions = async () => {
+    try {
+      const res = await fetch("/api/auth/me")
+      const data = await res.json()
+      if (res.ok && data.user) {
+        setUserStatus(data.user.status || "active")
+        if (data.user.status === "banned") {
+          setUserRestriction("Your account has been banned and cannot mine.")
+        } else if (data.user.status === "suspended") {
+          setUserRestriction("Your account has been suspended. Please contact support.")
+        } else if (Array.isArray(data.user.restrictions) && data.user.restrictions.includes("mine")) {
+          setUserRestriction("Your account is restricted from mining.")
+        }
+      }
+    } catch (error) {
+      console.error("[v0] Failed to fetch user restrictions:", error)
+    }
+  }
 
   const fetchStatus = async () => {
     try {
@@ -65,6 +87,7 @@ export function MiningDashboard() {
   }
 
   useEffect(() => {
+    fetchUserRestrictions()
     fetchStatus()
     fetchHistory()
 
@@ -97,9 +120,24 @@ export function MiningDashboard() {
         fetchStatus()
       } else {
         console.error("[v0] Mining start failed:", data)
+
+        let errorMessage = data.error || "Failed to start mining"
+
+        if (data.error?.includes("banned")) {
+          errorMessage = "❌ Your account has been banned and cannot mine."
+        } else if (data.error?.includes("suspended")) {
+          errorMessage = "❌ Your account has been suspended. Please contact support."
+        } else if (data.error?.includes("restricted")) {
+          errorMessage = "❌ Mining feature is restricted for your account. Contact support for more information."
+        } else if (data.error?.includes("disabled")) {
+          errorMessage = "❌ Mining is currently disabled by the platform."
+        } else if (data.error?.includes("active")) {
+          errorMessage = "❌ You already have an active mining session. Complete it first."
+        }
+
         toast({
           title: "Error",
-          description: data.error || "Failed to start mining",
+          description: errorMessage,
           variant: "destructive",
         })
       }
@@ -188,6 +226,13 @@ export function MiningDashboard() {
 
   return (
     <div className="space-y-6">
+      {userRestriction && (
+        <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-destructive font-medium">{userRestriction}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Active Mining Session */}
       <Card className="border-primary/20">
         <CardHeader>
@@ -204,10 +249,10 @@ export function MiningDashboard() {
                 <Pickaxe className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg mb-2">Start Mining</h3>
+                <h3 className="font-semibold text-lg">Start Mining</h3>
                 <p className="text-sm text-muted-foreground mb-4">Begin a mining session to earn KZC rewards</p>
               </div>
-              <Button onClick={handleStartMining} disabled={starting} size="lg" className="gap-2">
+              <Button onClick={handleStartMining} disabled={starting || !!userRestriction} size="lg" className="gap-2">
                 {starting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />

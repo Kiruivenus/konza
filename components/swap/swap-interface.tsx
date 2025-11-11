@@ -16,6 +16,11 @@ interface SwapRate {
   kzcToUsdt: number
   usdtToKzc: number
   swapFee: number
+  priceInfo?: {
+    trend: string
+    changePercentage: number
+    progress: number
+  }
 }
 
 interface SwapHistory {
@@ -40,7 +45,32 @@ export function SwapInterface() {
   const [showPinDialog, setShowPinDialog] = useState(false)
   const [pin, setPin] = useState("")
   const [history, setHistory] = useState<SwapHistory[]>([])
+  const [userRestriction, setUserRestriction] = useState<string | null>(null)
+  const [userStatus, setUserStatus] = useState<string>("active")
+  const [kycStatus, setKycStatus] = useState<string | null>(null)
   const { toast } = useToast()
+
+  const fetchUserRestrictions = async () => {
+    try {
+      const res = await fetch("/api/auth/me")
+      const data = await res.json()
+      if (res.ok && data.user) {
+        setUserStatus(data.user.status || "active")
+        setKycStatus(data.user.kycStatus || null)
+        if (data.user.status === "banned") {
+          setUserRestriction("Your account has been banned and cannot perform swaps.")
+        } else if (data.user.status === "suspended") {
+          setUserRestriction("Your account has been suspended. Please contact support.")
+        } else if (Array.isArray(data.user.restrictions) && data.user.restrictions.includes("swap")) {
+          setUserRestriction("Swap feature is restricted for your account. Contact support for more information.")
+        } else if (data.user.kycStatus?.toLowerCase() !== "approved") {
+          setUserRestriction("KYC verification is required to swap. Please complete your KYC first.")
+        }
+      }
+    } catch (error) {
+      console.error("[v0] Failed to fetch user restrictions:", error)
+    }
+  }
 
   const fetchRate = async () => {
     try {
@@ -49,9 +79,10 @@ export function SwapInterface() {
 
       if (res.ok) {
         setRate(data)
+        console.log("[v0] Swap rate updated:", data)
       }
     } catch (error) {
-      console.error("Failed to fetch swap rate:", error)
+      console.error("[v0] Failed to fetch swap rate:", error)
     } finally {
       setLoading(false)
     }
@@ -66,17 +97,18 @@ export function SwapInterface() {
         setHistory(data.history)
       }
     } catch (error) {
-      console.error("Failed to fetch swap history:", error)
+      console.error("[v0] Failed to fetch swap history:", error)
     }
   }
 
   useEffect(() => {
+    fetchUserRestrictions()
     fetchRate()
     fetchHistory()
 
     const priceInterval = setInterval(() => {
       fetchRate()
-    }, 10000)
+    }, 5000)
 
     return () => clearInterval(priceInterval)
   }, [])
@@ -152,10 +184,11 @@ export function SwapInterface() {
 
       console.log("[v0] Swap response:", { status: res.status, data })
 
-      if (res.ok) {
+      if (res.ok && data.success) {
         toast({
           title: "✓ Swap Successful!",
-          description: `Successfully swapped ${fromAmount} ${fromCurrency} to ${toAmount} ${toCurrency}`,
+          description:
+            data.message || `Successfully swapped ${fromAmount} ${fromCurrency} to ${toAmount} ${toCurrency}`,
           duration: 5000,
         })
         setFromAmount("")
@@ -163,12 +196,30 @@ export function SwapInterface() {
         setPin("")
         setShowPinDialog(false)
         fetchHistory()
-        setTimeout(() => window.location.reload(), 1000)
+        fetchRate()
       } else {
-        console.error("[v0] Swap failed:", data.error)
+        let errorMessage = data.error || "Failed to execute swap. Please try again."
+
+        if (data.error?.includes("Invalid PIN")) {
+          errorMessage = "❌ Wrong PIN. Please try again."
+        } else if (data.error?.includes("Insufficient")) {
+          errorMessage = `❌ ${data.error}`
+        } else if (data.error?.includes("KYC")) {
+          errorMessage = "❌ KYC verification required for swaps. Please complete your KYC first."
+        } else if (data.error?.includes("banned")) {
+          errorMessage = "❌ Your account has been banned and cannot perform swaps."
+        } else if (data.error?.includes("suspended")) {
+          errorMessage = "❌ Your account has been suspended. Please contact support."
+        } else if (data.error?.includes("restricted")) {
+          errorMessage = "❌ Swap feature is restricted for your account. Contact support for more information."
+        } else if (data.error?.includes("disabled")) {
+          errorMessage = "❌ Swaps are currently disabled by the platform."
+        }
+
+        console.error("[v0] Swap failed:", errorMessage)
         toast({
-          title: "✗ Swap Failed",
-          description: data.error || "Failed to execute swap. Please try again.",
+          title: "Swap Failed",
+          description: errorMessage,
           variant: "destructive",
           duration: 5000,
         })
@@ -177,7 +228,7 @@ export function SwapInterface() {
     } catch (error) {
       console.error("[v0] Swap error:", error)
       toast({
-        title: "✗ Swap Failed",
+        title: "Swap Failed",
         description: "Network error. Please check your connection and try again.",
         variant: "destructive",
         duration: 5000,
@@ -210,6 +261,13 @@ export function SwapInterface() {
 
   return (
     <div className="space-y-6">
+      {userRestriction && (
+        <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-destructive font-medium">{userRestriction}</AlertDescription>
+        </Alert>
+      )}
+
       <Card className="border-primary/20 bg-gradient-to-br from-background to-primary/5">
         <CardHeader>
           <CardTitle className="text-2xl">Swap Tokens</CardTitle>
@@ -258,7 +316,7 @@ export function SwapInterface() {
           {/* Swap Details */}
           <div className="space-y-2 p-4 rounded-lg bg-muted/50">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Exchange Rate</span>
+              <span className="text-muted-foreground">Exchange Rate (Live)</span>
               <span className="font-medium">
                 1 {fromCurrency} = {currentRate.toFixed(6)} {toCurrency}
               </span>
@@ -281,7 +339,7 @@ export function SwapInterface() {
             onClick={handleSwap}
             className="w-full"
             size="lg"
-            disabled={!fromAmount || Number.parseFloat(fromAmount) <= 0}
+            disabled={!fromAmount || Number.parseFloat(fromAmount) <= 0 || !!userRestriction}
           >
             Swap {fromCurrency} to {toCurrency}
           </Button>

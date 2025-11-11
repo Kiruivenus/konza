@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Your account has been suspended" }, { status: 403 })
     }
 
-    if (sender.restrictions?.includes("transfer")) {
+    if (Array.isArray(sender.restrictions) && sender.restrictions.includes("transfer")) {
       console.log("[v0] Send failed: Transfer restricted")
       return NextResponse.json({ error: "Transfer feature is restricted for your account" }, { status: 403 })
     }

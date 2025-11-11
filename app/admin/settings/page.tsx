@@ -38,15 +38,16 @@ export default function AdminSettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      console.log("[v0] Saving settings:", settings) // Debug log
+      const { _id, ...settingsToSave } = settings
+      console.log("[v0] Saving settings:", settingsToSave)
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(settingsToSave),
       })
 
       const data = await res.json()
-      console.log("[v0] Save response:", data) // Debug log
+      console.log("[v0] Save response:", data)
 
       if (res.ok) {
         toast({

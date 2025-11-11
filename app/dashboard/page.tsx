@@ -201,9 +201,15 @@ function DashboardContent() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="border-b border-border sticky top-0 bg-background z-10">
+      <header className="border-b border-border sticky top-0 bg-background z-10 relative">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Konza Coin</h1>
+          {user?.kycStatus === "Approved" && (
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-1.5 bg-green-500/10 border border-green-500/20 rounded-full px-3 py-1">
+              <Shield className="h-4 w-4 text-green-500" />
+              <span className="text-xs font-semibold text-green-500">Verified</span>
+            </div>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">

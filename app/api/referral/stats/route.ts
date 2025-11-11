@@ -17,6 +17,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
+    const settings = await db.collection("settings").findOne({})
+    const referralEnabled = settings?.referralEnabled ?? true
+
     // Get referral statistics
     const totalReferrals = await db.collection("referrals").countDocuments({
       referrerId: new ObjectId(session.userId),
@@ -31,6 +34,28 @@ export async function GET(request: NextRequest) {
       referrerId: new ObjectId(session.userId),
       status: "pending",
     })
+
+    console.log(
+      "[v0] Referral stats - Total:",
+      totalReferrals,
+      "Completed:",
+      completedReferrals,
+      "Pending:",
+      pendingReferrals,
+      "userId:",
+      session.userId,
+    )
+
+    // Verify actual referral statuses in database
+    const allReferrals = await db
+      .collection("referrals")
+      .find({ referrerId: new ObjectId(session.userId) })
+      .toArray()
+
+    console.log(
+      "[v0] All referrals for user:",
+      allReferrals.map((r) => ({ status: r.status, referredId: r.referredId })),
+    )
 
     // Calculate total earnings
     const referrals = await db
@@ -71,6 +96,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       referralCode: user.referralCode,
+      referralEnabled,
       totalReferrals,
       completedReferrals,
       pendingReferrals,

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,6 +27,25 @@ export function SendDialog({ open, onOpenChange, onSuccess, transferFee }: SendD
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [transactionHash, setTransactionHash] = useState("")
+  const [userRestriction, setUserRestriction] = useState<string | null>(null)
+
+  const fetchUserRestrictions = async () => {
+    try {
+      const res = await fetch("/api/auth/me")
+      const data = await res.json()
+      if (res.ok && data.user) {
+        if (data.user.status === "banned") {
+          setUserRestriction("Your account has been banned and cannot transfer funds.")
+        } else if (data.user.status === "suspended") {
+          setUserRestriction("Your account has been suspended. Please contact support.")
+        } else if (Array.isArray(data.user.restrictions) && data.user.restrictions.includes("transfer")) {
+          setUserRestriction("Transfer feature is restricted for your account. Contact support for more information.")
+        }
+      }
+    } catch (error) {
+      console.error("[v0] Failed to fetch user restrictions:", error)
+    }
+  }
 
   const handleCheckAddress = async () => {
     setError("")
@@ -101,6 +120,12 @@ export function SendDialog({ open, onOpenChange, onSuccess, transferFee }: SendD
     navigator.clipboard.writeText(transactionHash)
   }
 
+  useEffect(() => {
+    if (open) {
+      fetchUserRestrictions()
+    }
+  }, [open])
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
@@ -111,13 +136,35 @@ export function SendDialog({ open, onOpenChange, onSuccess, transferFee }: SendD
 
         {step === "input" && (
           <div className="space-y-4">
-            {error && <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm">{error}</div>}
+            {userRestriction && (
+              <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm font-medium border border-destructive/50">
+                ❌ {userRestriction}
+              </div>
+            )}
+
+            {error && !userRestriction && (
+              <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm space-y-1">
+                {error.includes("banned") && <div>❌ Your account has been banned and cannot transfer funds.</div>}
+                {error.includes("suspended") && <div>❌ Your account has been suspended. Please contact support.</div>}
+                {error.includes("restricted") && (
+                  <div>❌ Transfer feature is restricted for your account. Contact support for more information.</div>
+                )}
+                {error.includes("Insufficient") && <div>❌ {error}</div>}
+                {error.includes("PIN") && <div>❌ Invalid PIN. Please try again.</div>}
+                {!error.includes("banned") &&
+                  !error.includes("suspended") &&
+                  !error.includes("restricted") &&
+                  !error.includes("Insufficient") &&
+                  !error.includes("PIN") && <div>❌ {error}</div>}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
               <Select
                 value={formData.currency}
                 onValueChange={(value) => setFormData({ ...formData, currency: value })}
+                disabled={!!userRestriction}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -156,7 +203,7 @@ export function SendDialog({ open, onOpenChange, onSuccess, transferFee }: SendD
 
             <Button
               onClick={handleCheckAddress}
-              disabled={loading || !formData.receiverAddress || !formData.amount}
+              disabled={loading || !formData.receiverAddress || !formData.amount || !!userRestriction}
               className="w-full"
             >
               {loading ? (
@@ -173,7 +220,22 @@ export function SendDialog({ open, onOpenChange, onSuccess, transferFee }: SendD
 
         {step === "confirm" && receiverInfo && (
           <div className="space-y-4">
-            {error && <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm">{error}</div>}
+            {error && (
+              <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm space-y-1">
+                {error.includes("banned") && <div>❌ Your account has been banned and cannot transfer funds.</div>}
+                {error.includes("suspended") && <div>❌ Your account has been suspended. Please contact support.</div>}
+                {error.includes("restricted") && (
+                  <div>❌ Transfer feature is restricted for your account. Contact support for more information.</div>
+                )}
+                {error.includes("Insufficient") && <div>❌ {error}</div>}
+                {error.includes("PIN") && <div>❌ Invalid PIN. Please try again.</div>}
+                {!error.includes("banned") &&
+                  !error.includes("suspended") &&
+                  !error.includes("restricted") &&
+                  !error.includes("Insufficient") &&
+                  !error.includes("PIN") && <div>❌ {error}</div>}
+              </div>
+            )}
 
             <div className="bg-muted rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
@@ -257,15 +319,11 @@ export function SendDialog({ open, onOpenChange, onSuccess, transferFee }: SendD
               <p className="text-sm text-muted-foreground">Transaction Hash:</p>
               <div className="flex items-center gap-2">
                 <code className="text-sm font-mono flex-1 break-all">{transactionHash}</code>
-                <Button size="sm" variant="ghost" onClick={copyHash}>
+                <Button variant="outline" size="sm" onClick={copyHash} disabled={loading}>
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
             </div>
-
-            <Button onClick={handleClose} className="w-full">
-              Done
-            </Button>
           </div>
         )}
       </DialogContent>

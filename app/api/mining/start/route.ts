@@ -25,13 +25,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Your account has been suspended" }, { status: 403 })
     }
 
-    if (user.restrictions?.includes("mine")) {
+    if (Array.isArray(user.restrictions) && user.restrictions.includes("mine")) {
       return NextResponse.json({ error: "Mining feature is restricted for your account" }, { status: 403 })
     }
 
     const settings = await db.collection("settings").findOne({})
 
     if (!settings?.miningEnabled) {
+      console.log("[v0] Mining start failed: Mining is disabled in settings")
       return NextResponse.json({ error: "Mining is currently disabled" }, { status: 400 })
     }
 
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingSession) {
+      console.log("[v0] Mining start failed: User already has active session")
       return NextResponse.json({ error: "You already have an active mining session" }, { status: 400 })
     }
 
@@ -57,6 +59,8 @@ export async function POST(request: NextRequest) {
     // Create new mining session
     const miningSession = {
       userId: new ObjectId(session.userId),
+      username: user.username,
+      walletAddress: user.walletAddress,
       startTime: new Date(),
       endTime: new Date(Date.now() + durationHours * 60 * 60 * 1000), // Convert hours to ms
       rewardRate,

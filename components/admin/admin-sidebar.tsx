@@ -12,6 +12,7 @@ import {
   Gift,
   Settings,
   LogOut,
+  GiftIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -25,6 +26,7 @@ const navItems = [
   { href: "/admin/swaps", icon: ArrowLeftRight, label: "Swaps" },
   { href: "/admin/mining", icon: Pickaxe, label: "Mining" },
   { href: "/admin/referrals", icon: Gift, label: "Referrals" },
+  { href: "/admin/distribute", icon: GiftIcon, label: "Distribute Coins" },
   { href: "/admin/settings", icon: Settings, label: "Settings" },
 ]
 

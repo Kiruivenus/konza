@@ -28,12 +28,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    if (!user.pin) {
+    if (!user.walletPin) {
       return NextResponse.json({ error: "No PIN set" }, { status: 400 })
     }
 
     // Verify current PIN
-    const isPinValid = await bcrypt.compare(currentPin, user.pin)
+    const isPinValid = await bcrypt.compare(currentPin, user.walletPin)
     if (!isPinValid) {
       return NextResponse.json({ error: "Current PIN is incorrect" }, { status: 401 })
     }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     const hashedPin = await bcrypt.hash(newPin, 10)
 
     // Update PIN
-    await db.collection("users").updateOne({ _id: new ObjectId(session.userId) }, { $set: { pin: hashedPin } })
+    await db.collection("users").updateOne({ _id: new ObjectId(session.userId) }, { $set: { walletPin: hashedPin } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

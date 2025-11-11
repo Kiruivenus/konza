@@ -32,7 +32,9 @@ export async function PUT(request: NextRequest) {
 
     const db = await getDb()
 
-    const processedUpdates = Object.entries(updates).reduce((acc, [key, value]) => {
+    const { _id, ...updateData } = updates
+
+    const processedUpdates = Object.entries(updateData).reduce((acc, [key, value]) => {
       if (typeof value === "string" && !isNaN(Number(value))) {
         acc[key] = Number(value)
       } else {

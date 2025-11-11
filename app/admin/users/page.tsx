@@ -29,11 +29,7 @@ interface User {
   role: string
   createdAt: string
   status?: string
-  restrictions?: {
-    canSwap: boolean
-    canMine: boolean
-    canTransfer: boolean
-  }
+  restrictions?: string[]
 }
 
 export default function UsersPage() {
@@ -45,6 +41,12 @@ export default function UsersPage() {
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
+
+  const [restrictionToggles, setRestrictionToggles] = useState({
+    canSwap: true,
+    canMine: true,
+    canTransfer: true,
+  })
 
   useEffect(() => {
     fetchUsers()
@@ -108,12 +110,19 @@ export default function UsersPage() {
 
     setUpdating(true)
     try {
+      const restrictions: string[] = []
+      if (!restrictionToggles.canSwap) restrictions.push("swap")
+      if (!restrictionToggles.canMine) restrictions.push("mine")
+      if (!restrictionToggles.canTransfer) restrictions.push("transfer")
+
+      console.log("[v0] Updating restrictions:", { userId: selectedUser._id, restrictions })
+
       const res = await fetch("/api/admin/users/restrict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: selectedUser._id,
-          restrictions: selectedUser.restrictions,
+          restrictions,
         }),
       })
 
@@ -133,6 +142,7 @@ export default function UsersPage() {
         })
       }
     } catch (error) {
+      console.error("[v0] Failed to update restrictions:", error)
       toast({
         title: "Error",
         description: "Failed to update restrictions",
@@ -233,6 +243,11 @@ export default function UsersPage() {
                     <Button
                       onClick={() => {
                         setSelectedUser(user)
+                        setRestrictionToggles({
+                          canSwap: !user.restrictions?.includes("swap"),
+                          canMine: !user.restrictions?.includes("mine"),
+                          canTransfer: !user.restrictions?.includes("transfer"),
+                        })
                         setViewMode("restrict")
                       }}
                       variant="outline"
@@ -319,13 +334,8 @@ export default function UsersPage() {
                     <p className="text-sm text-muted-foreground">Allow user to swap tokens</p>
                   </div>
                   <Switch
-                    checked={selectedUser.restrictions?.canSwap !== false}
-                    onCheckedChange={(checked) =>
-                      setSelectedUser({
-                        ...selectedUser,
-                        restrictions: { ...selectedUser.restrictions, canSwap: checked },
-                      })
-                    }
+                    checked={restrictionToggles.canSwap}
+                    onCheckedChange={(checked) => setRestrictionToggles({ ...restrictionToggles, canSwap: checked })}
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -334,13 +344,8 @@ export default function UsersPage() {
                     <p className="text-sm text-muted-foreground">Allow user to mine tokens</p>
                   </div>
                   <Switch
-                    checked={selectedUser.restrictions?.canMine !== false}
-                    onCheckedChange={(checked) =>
-                      setSelectedUser({
-                        ...selectedUser,
-                        restrictions: { ...selectedUser.restrictions, canMine: checked },
-                      })
-                    }
+                    checked={restrictionToggles.canMine}
+                    onCheckedChange={(checked) => setRestrictionToggles({ ...restrictionToggles, canMine: checked })}
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -349,12 +354,9 @@ export default function UsersPage() {
                     <p className="text-sm text-muted-foreground">Allow user to send/receive tokens</p>
                   </div>
                   <Switch
-                    checked={selectedUser.restrictions?.canTransfer !== false}
+                    checked={restrictionToggles.canTransfer}
                     onCheckedChange={(checked) =>
-                      setSelectedUser({
-                        ...selectedUser,
-                        restrictions: { ...selectedUser.restrictions, canTransfer: checked },
-                      })
+                      setRestrictionToggles({ ...restrictionToggles, canTransfer: checked })
                     }
                   />
                 </div>

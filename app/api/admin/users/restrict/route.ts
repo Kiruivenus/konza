@@ -12,10 +12,16 @@ export async function POST(request: NextRequest) {
 
     const { userId, restrictions } = await request.json()
 
+    console.log("[v0] Updating user restrictions:", { userId, restrictions })
+
+    const restrictionsArray = Array.isArray(restrictions) ? restrictions : []
+
     const db = await getDb()
-    await db
+    const result = await db
       .collection("users")
-      .updateOne({ _id: new ObjectId(userId) }, { $set: { restrictions, updatedAt: new Date() } })
+      .updateOne({ _id: new ObjectId(userId) }, { $set: { restrictions: restrictionsArray, updatedAt: new Date() } })
+
+    console.log("[v0] Restrictions updated:", { userId, restrictions: restrictionsArray, result })
 
     return NextResponse.json({ success: true })
   } catch (error) {

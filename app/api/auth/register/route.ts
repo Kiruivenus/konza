@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           referredId: result.insertedId,
           referredUsername: username,
           bonusAmount: 0,
-          status: "Pending",
+          status: "pending", // changed from "Pending" to "pending" for consistency
           createdAt: new Date(),
         })
       }

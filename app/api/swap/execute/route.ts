@@ -47,26 +47,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Your account has been suspended" }, { status: 403 })
     }
 
-    if (user.restrictions?.includes("swap")) {
+    if (Array.isArray(user.restrictions) && user.restrictions.includes("swap")) {
       return NextResponse.json({ error: "Swap feature is restricted for your account" }, { status: 403 })
     }
 
     // Check KYC status
-    if (user.kycStatus !== "approved") {
-      console.log("[v0] Swap execute: KYC not approved")
+    if (user.kycStatus?.toLowerCase() !== "approved") {
+      console.log("[v0] Swap execute: KYC not approved, status:", user.kycStatus)
       return NextResponse.json({ error: "KYC verification required for swaps" }, { status: 403 })
     }
 
     console.log("[v0] Swap execute: Verifying PIN...")
-    if (!user.pin) {
+    if (!user.walletPin) {
       console.log("[v0] Swap execute: No PIN set for user")
       return NextResponse.json({ error: "Please set up a PIN first" }, { status: 400 })
     }
 
-    const isPinValid = await bcrypt.compare(pin, user.pin)
+    const isPinValid = await bcrypt.compare(pin, user.walletPin)
     console.log("[v0] Swap execute: PIN valid:", isPinValid)
 
     if (!isPinValid) {
+      console.log("[v0] Swap execute: Invalid PIN provided")
       return NextResponse.json({ error: "Invalid PIN" }, { status: 401 })
     }
 
@@ -83,11 +84,13 @@ export async function POST(request: NextRequest) {
 
     // Check if swap is enabled
     if (!settings.swapEnabled) {
+      console.log("[v0] Swap execute: Swaps disabled")
       return NextResponse.json({ error: "Swaps are currently disabled" }, { status: 400 })
     }
 
     // Check minimum swap amount
     if (amount < settings.minSwapAmount) {
+      console.log("[v0] Swap execute: Amount below minimum")
       return NextResponse.json(
         {
           error: `Minimum swap amount is ${settings.minSwapAmount} ${fromCurrency}`,
@@ -109,12 +112,12 @@ export async function POST(request: NextRequest) {
 
       // Check if user has enough KZC balance
       if (user.balance < amount) {
-        console.log("[v0] Swap execute: Insufficient KZC balance")
+        console.log("[v0] Swap execute: Insufficient KZC balance", { userBalance: user.balance, required: amount })
         return NextResponse.json({ error: "Insufficient KZC balance" }, { status: 400 })
       }
 
       // Update balances
-      await db.collection("users").updateOne(
+      const updateResult = await db.collection("users").updateOne(
         { _id: new ObjectId(session.userId) },
         {
           $inc: {
@@ -123,19 +126,19 @@ export async function POST(request: NextRequest) {
           },
         },
       )
-      console.log("[v0] Swap execute: KZC to USDT swap completed")
+      console.log("[v0] Swap execute: KZC to USDT swap completed", { updateResult })
     } else if (fromCurrency === "USDT" && toCurrency === "KZC") {
       rate = 1 / coinPrice.price
       receivedAmount = amount * rate * (1 - swapFee)
 
       // Check if user has enough USDT balance
       if ((user.usdtBalance || 0) < amount) {
-        console.log("[v0] Swap execute: Insufficient USDT balance")
+        console.log("[v0] Swap execute: Insufficient USDT balance", { userBalance: user.usdtBalance, required: amount })
         return NextResponse.json({ error: "Insufficient USDT balance" }, { status: 400 })
       }
 
       // Update balances
-      await db.collection("users").updateOne(
+      const updateResult = await db.collection("users").updateOne(
         { _id: new ObjectId(session.userId) },
         {
           $inc: {
@@ -144,8 +147,9 @@ export async function POST(request: NextRequest) {
           },
         },
       )
-      console.log("[v0] Swap execute: USDT to KZC swap completed")
+      console.log("[v0] Swap execute: USDT to KZC swap completed", { updateResult })
     } else {
+      console.log("[v0] Swap execute: Invalid currency pair")
       return NextResponse.json({ error: "Invalid currency pair" }, { status: 400 })
     }
 
@@ -164,6 +168,7 @@ export async function POST(request: NextRequest) {
     }
 
     await db.collection("swaps").insertOne(swap)
+    console.log("[v0] Swap execute: Swap record created")
 
     // Create transaction record
     const transaction = {
@@ -190,6 +195,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      message: `Successfully swapped ${amount} ${fromCurrency} to ${receivedAmount.toFixed(6)} ${toCurrency}`,
       swap: {
         ...swap,
         _id: swap.userId,
@@ -198,6 +204,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("[v0] Execute swap error:", error)
-    return NextResponse.json({ error: "Failed to execute swap" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to execute swap. Please try again." }, { status: 500 })
   }
 }

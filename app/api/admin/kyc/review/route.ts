@@ -59,46 +59,59 @@ export async function POST(request: NextRequest) {
 
       const referral = await referralsCollection.findOne({
         referredId: kyc.userId,
-        status: "Pending",
+        status: "pending",
       })
 
       if (referral) {
         const settings = await settingsCollection.findOne({})
-        const referralBonus = settings?.referralBonus || 50
+        if (settings?.referralEnabled) {
+          const referralBonus = settings?.referralBonus || 50
 
-        // Update referrer balance
-        await usersCollection.updateOne({ _id: referral.referrerId }, { $inc: { balance: referralBonus } })
+          // Update referrer balance
+          await usersCollection.updateOne({ _id: referral.referrerId }, { $inc: { balance: referralBonus } })
 
-        // Update referral status
-        await referralsCollection.updateOne(
-          { _id: referral._id },
-          {
-            $set: {
-              status: "Completed",
-              bonusAmount: referralBonus,
-              completedAt: new Date(),
+          // Update referral status
+          await referralsCollection.updateOne(
+            { _id: referral._id },
+            {
+              $set: {
+                status: "completed",
+                bonusAmount: referralBonus,
+                completedAt: new Date(),
+              },
             },
-          },
-        )
+          )
 
-        // Create referral transaction
-        const { getTransactionsCollection } = await import("@/lib/db/collections")
-        const { generateTransactionHash } = await import("@/lib/utils/wallet")
-        const transactionsCollection = await getTransactionsCollection()
+          // Create referral transaction
+          const { getTransactionsCollection } = await import("@/lib/db/collections")
+          const { generateTransactionHash } = await import("@/lib/utils/wallet")
+          const transactionsCollection = await getTransactionsCollection()
 
-        const referrer = await usersCollection.findOne({ _id: referral.referrerId })
+          const referrer = await usersCollection.findOne({ _id: referral.referrerId })
 
-        if (referrer) {
-          await transactionsCollection.insertOne({
-            hash: generateTransactionHash(),
-            type: "referral",
-            sender: "SYSTEM",
-            receiver: referrer.walletAddress,
-            amount: referralBonus,
-            fee: 0,
-            status: "Success",
-            timestamp: new Date(),
-          })
+          if (referrer) {
+            await transactionsCollection.insertOne({
+              hash: generateTransactionHash(),
+              type: "referral",
+              sender: "SYSTEM",
+              receiver: referrer.walletAddress,
+              amount: referralBonus,
+              fee: 0,
+              status: "Success",
+              timestamp: new Date(),
+            })
+          }
+        } else {
+          await referralsCollection.updateOne(
+            { _id: referral._id },
+            {
+              $set: {
+                status: "completed",
+                bonusAmount: 0,
+                completedAt: new Date(),
+              },
+            },
+          )
         }
       }
     }
