@@ -54,8 +54,9 @@ export function ReferralDashboard() {
       navigator.clipboard.writeText(stats.referralCode)
       setCopied(true)
       toast({
-        title: "Copied!",
+        title: "✓ Copied!",
         description: "Referral code copied to clipboard",
+        className: "bg-green-50 border-green-200",
       })
       setTimeout(() => setCopied(false), 2000)
     }
@@ -66,8 +67,9 @@ export function ReferralDashboard() {
       const link = `${window.location.origin}/register?ref=${stats.referralCode}`
       navigator.clipboard.writeText(link)
       toast({
-        title: "Copied!",
+        title: "✓ Copied!",
         description: "Referral link copied to clipboard",
+        className: "bg-green-50 border-green-200",
       })
     }
   }

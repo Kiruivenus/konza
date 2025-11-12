@@ -11,12 +11,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { documentImage, documentBackImage, selfieImage } = body
+    const formData = await request.formData()
+    const documentImage = formData.get("documentImage") as File
+    const documentBackImage = formData.get("documentBackImage") as File
+    const selfieImage = formData.get("selfieImage") as File
 
     if (!documentImage || !documentBackImage || !selfieImage) {
       return NextResponse.json({ error: "Document front, back, and selfie images are required" }, { status: 400 })
     }
+
+    const docFrontBuffer = await documentImage.arrayBuffer()
+    const docBackBuffer = await documentBackImage.arrayBuffer()
+    const selfieBuffer = await selfieImage.arrayBuffer()
+
+    const docFrontBase64 = "data:" + documentImage.type + ";base64," + Buffer.from(docFrontBuffer).toString("base64")
+    const docBackBase64 = "data:" + documentBackImage.type + ";base64," + Buffer.from(docBackBuffer).toString("base64")
+    const selfieBase64 = "data:" + selfieImage.type + ";base64," + Buffer.from(selfieBuffer).toString("base64")
 
     const usersCollection = await getUsersCollection()
     const kycCollection = await getKYCCollection()
@@ -44,9 +54,9 @@ export async function POST(request: NextRequest) {
         { _id: existingKYC._id },
         {
           $set: {
-            documentImage,
-            documentBackImage,
-            selfieImage,
+            documentImage: docFrontBase64,
+            documentBackImage: docBackBase64,
+            selfieImage: selfieBase64,
             status: "Pending",
             submittedAt: new Date(),
           },
@@ -56,9 +66,9 @@ export async function POST(request: NextRequest) {
       await kycCollection.insertOne({
         userId: user._id,
         username: user.username,
-        documentImage,
-        documentBackImage,
-        selfieImage,
+        documentImage: docFrontBase64,
+        documentBackImage: docBackBase64,
+        selfieImage: selfieBase64,
         status: "Pending",
         submittedAt: new Date(),
       })

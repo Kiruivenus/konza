@@ -11,9 +11,9 @@ import Image from "next/image"
 
 export function KYCForm() {
   const [step, setStep] = useState<"upload" | "success">("upload")
-  const [documentFrontImage, setDocumentFrontImage] = useState<string>("")
-  const [documentBackImage, setDocumentBackImage] = useState<string>("")
-  const [selfieImage, setSelfieImage] = useState<string>("")
+  const [documentFrontImage, setDocumentFrontImage] = useState<File | null>(null)
+  const [documentBackImage, setDocumentBackImage] = useState<File | null>(null)
+  const [selfieImage, setSelfieImage] = useState<File | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -22,44 +22,26 @@ export function KYCForm() {
   const selfieInputRef = useRef<HTMLInputElement>(null)
 
   const handleImageUpload = (file: File, type: "documentFront" | "documentBack" | "selfie") => {
-    // Check file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB in bytes
-    if (file.size > maxSize) {
-      setError(`Image is too large. Maximum size is 5MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB`)
-      return
-    }
-
-    // Check file type
     if (!file.type.startsWith("image/")) {
       setError("Please upload a valid image file")
       return
     }
 
-    console.log("[v0] Uploading image:", {
+    console.log("[v0] Image selected:", {
       type,
       fileName: file.name,
       fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
       fileType: file.type,
     })
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const base64String = reader.result as string
-      console.log("[v0] Image converted to base64, length:", base64String.length)
-      if (type === "documentFront") {
-        setDocumentFrontImage(base64String)
-      } else if (type === "documentBack") {
-        setDocumentBackImage(base64String)
-      } else {
-        setSelfieImage(base64String)
-      }
-      setError("") // Clear any previous errors
+    if (type === "documentFront") {
+      setDocumentFrontImage(file)
+    } else if (type === "documentBack") {
+      setDocumentBackImage(file)
+    } else {
+      setSelfieImage(file)
     }
-    reader.onerror = () => {
-      console.error("[v0] Failed to read image file")
-      setError("Failed to read image file. Please try again.")
-    }
-    reader.readAsDataURL(file)
+    setError("") // Clear any previous errors
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,23 +53,19 @@ export function KYCForm() {
       return
     }
 
-    console.log("[v0] Submitting KYC:", {
-      documentFrontLength: documentFrontImage.length,
-      documentBackLength: documentBackImage.length,
-      selfieLength: selfieImage.length,
-    })
+    console.log("[v0] Submitting KYC with files")
 
     setLoading(true)
 
     try {
+      const formData = new FormData()
+      formData.append("documentImage", documentFrontImage)
+      formData.append("documentBackImage", documentBackImage)
+      formData.append("selfieImage", selfieImage)
+
       const response = await fetch("/api/kyc/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          documentImage: documentFrontImage,
-          documentBackImage: documentBackImage,
-          selfieImage,
-        }),
+        body: formData,
       })
 
       const data = await response.json()
@@ -120,7 +98,7 @@ export function KYCForm() {
             </div>
             <div>
               <h3 className="text-xl font-semibold mb-2">KYC Submitted Successfully!</h3>
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Your KYC documents have been submitted for review. You will be notified once the review is complete.
               </p>
             </div>
@@ -158,7 +136,7 @@ export function KYCForm() {
                 <div className="space-y-3">
                   <div className="relative w-full h-48">
                     <Image
-                      src={documentFrontImage || "/placeholder.svg"}
+                      src={URL.createObjectURL(documentFrontImage) || "/placeholder.svg"}
                       alt="Document Front"
                       fill
                       className="object-contain rounded"
@@ -204,7 +182,7 @@ export function KYCForm() {
                 <div className="space-y-3">
                   <div className="relative w-full h-48">
                     <Image
-                      src={documentBackImage || "/placeholder.svg"}
+                      src={URL.createObjectURL(documentBackImage) || "/placeholder.svg"}
                       alt="Document Back"
                       fill
                       className="object-contain rounded"
@@ -250,7 +228,7 @@ export function KYCForm() {
                 <div className="space-y-3">
                   <div className="relative w-full h-48">
                     <Image
-                      src={selfieImage || "/placeholder.svg"}
+                      src={URL.createObjectURL(selfieImage) || "/placeholder.svg"}
                       alt="Selfie"
                       fill
                       className="object-contain rounded"

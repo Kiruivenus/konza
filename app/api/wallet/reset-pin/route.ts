@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const hashedPin = await bcrypt.hash(newPin, 10)
 
     // Update PIN
-    await db.collection("users").updateOne({ _id: new ObjectId(session.userId) }, { $set: { pin: hashedPin } })
+    await db.collection("users").updateOne({ _id: new ObjectId(session.userId) }, { $set: { walletPin: hashedPin } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

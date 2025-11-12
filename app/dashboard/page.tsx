@@ -41,6 +41,7 @@ import { Suspense } from "react"
 import { ChangePasswordDialog } from "@/components/settings/change-password-dialog"
 import { ChangePinDialog } from "@/components/settings/change-pin-dialog"
 import { ResetPinDialog } from "@/components/settings/reset-pin-dialog"
+import { EditProfileDialog } from "@/components/settings/edit-profile-dialog"
 
 function DashboardContent() {
   const router = useRouter()
@@ -55,6 +56,7 @@ function DashboardContent() {
   const [receiveDialogOpen, setReceiveDialogOpen] = useState(false)
   const [pinDialogOpen, setPinDialogOpen] = useState(false)
   const [hasPin, setHasPin] = useState(false)
+  const [editProfileOpen, setEditProfileOpen] = useState(false)
 
   const [miningSession, setMiningSession] = useState<any>(null)
   const [startingMining, setStartingMining] = useState(false)
@@ -528,7 +530,11 @@ function DashboardContent() {
                       variant="ghost"
                       onClick={() => {
                         navigator.clipboard.writeText(user?.walletAddress || "")
-                        toast({ title: "Copied!", description: "Wallet address copied to clipboard" })
+                        toast({
+                          title: "✓ Copied!",
+                          description: "Wallet address copied to clipboard",
+                          className: "bg-green-50 border-green-200 text-green-900",
+                        })
                       }}
                     >
                       <Copy className="h-4 w-4" />
@@ -562,26 +568,109 @@ function DashboardContent() {
             </div>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Profile Information
-                </CardTitle>
-                <CardDescription>Your account details</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Profile Information
+                  </CardTitle>
+                  <CardDescription>Your account details and personal information</CardDescription>
+                </div>
+                <Button onClick={() => setEditProfileOpen(true)} variant="outline" size="sm">
+                  Edit Profile
+                </Button>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Username</p>
-                    <p className="font-medium text-lg">{user?.username}</p>
+              <CardContent className="space-y-6">
+                {/* KYC Status Section */}
+                <div className="border-b pb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <Shield className="h-5 w-5" />
+                      KYC Verification Status
+                    </h4>
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${
+                        user?.kycStatus === "Approved"
+                          ? "bg-green-500/10 text-green-600 border border-green-500/20"
+                          : user?.kycStatus === "Pending"
+                            ? "bg-yellow-500/10 text-yellow-600 border border-yellow-500/20"
+                            : user?.kycStatus === "Rejected"
+                              ? "bg-red-500/10 text-red-600 border border-red-500/20"
+                              : "bg-muted text-muted-foreground border border-border"
+                      }`}
+                    >
+                      {user?.kycStatus === "Approved" && (
+                        <>
+                          <span className="text-lg">✓</span>
+                          Verified
+                        </>
+                      )}
+                      {user?.kycStatus === "Pending" && (
+                        <>
+                          <span className="text-lg">⏳</span>
+                          Pending Review
+                        </>
+                      )}
+                      {user?.kycStatus === "Rejected" && (
+                        <>
+                          <span className="text-lg">✕</span>
+                          Rejected
+                        </>
+                      )}
+                      {user?.kycStatus === "Not Submitted" && (
+                        <>
+                          <span className="text-lg">○</span>
+                          Not Submitted
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium text-lg">{user?.email}</p>
+                  {user?.kycStatus === "Not Submitted" && (
+                    <Link href="/kyc">
+                      <Button size="sm" variant="outline" className="w-full bg-transparent">
+                        Submit KYC Verification
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+
+                {/* Personal Information Section */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Personal Information</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">First Name</p>
+                      <p className="font-medium text-lg">{user?.profile?.firstName || "Not set"}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">Last Name</p>
+                      <p className="font-medium text-lg">{user?.profile?.lastName || "Not set"}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">Phone Number</p>
+                      <p className="font-medium text-lg">{user?.phone || "Not set"}</p>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Wallet Address</p>
+
+                {/* Account Information Section */}
+                <div className="border-t pt-6 space-y-4">
+                  <h4 className="font-semibold">Account Information</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">Username</p>
+                      <p className="font-medium text-lg">{user?.username}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium text-lg">{user?.email}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Wallet Section */}
+                <div className="border-t pt-6 space-y-4">
+                  <h4 className="font-semibold">Wallet Address</h4>
                   <div className="flex items-center gap-2 bg-muted rounded-lg p-3">
                     <code className="text-sm font-mono flex-1 break-all">{user?.walletAddress}</code>
                     <Button
@@ -589,7 +678,33 @@ function DashboardContent() {
                       variant="ghost"
                       onClick={() => {
                         navigator.clipboard.writeText(user?.walletAddress || "")
-                        toast({ title: "Copied!", description: "Wallet address copied to clipboard" })
+                        toast({
+                          title: "✓ Copied!",
+                          description: "Wallet address copied to clipboard",
+                          className: "bg-green-50 border-green-200 text-green-900",
+                        })
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="border-t pt-6 space-y-4">
+                  <h4 className="font-semibold">Referral Code</h4>
+                  <p className="text-sm text-muted-foreground">Share this code to earn referral bonuses</p>
+                  <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg p-3">
+                    <code className="text-sm font-mono font-bold flex-1 text-primary">{user?.referralCode}</code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(user?.referralCode || "")
+                        toast({
+                          title: "✓ Copied!",
+                          description: "Referral code copied to clipboard",
+                          className: "bg-green-50 border-green-200 text-green-900",
+                        })
                       }}
                     >
                       <Copy className="h-4 w-4" />
@@ -644,6 +759,7 @@ function DashboardContent() {
         )}
       </main>
 
+      {/* Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-20">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-around py-3">
@@ -698,6 +814,16 @@ function DashboardContent() {
         walletAddress={user?.walletAddress || ""}
       />
       <PinSetupDialog open={pinDialogOpen} onOpenChange={setPinDialogOpen} onSuccess={checkPin} />
+      <EditProfileDialog
+        open={editProfileOpen}
+        onOpenChange={setEditProfileOpen}
+        onSuccess={fetchUserData}
+        initialData={{
+          firstName: user?.profile?.firstName,
+          lastName: user?.profile?.lastName,
+          phone: user?.phone,
+        }}
+      />
     </div>
   )
 }

@@ -14,10 +14,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, Eye, EyeOff } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { SuccessModal } from "./success-modal"
 
 export function ResetPinDialog() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [successModal, setSuccessModal] = useState({
+    open: false,
+    isSuccess: false,
+    title: "",
+    description: "",
+  })
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     password: "",
@@ -60,28 +67,28 @@ export function ResetPinDialog() {
       const data = await res.json()
 
       if (res.ok) {
-        toast({
-          title: "✓ PIN Reset Successfully!",
+        setSuccessModal({
+          open: true,
+          isSuccess: true,
+          title: "PIN Reset Successfully",
           description: "Your PIN has been reset. Please use your new PIN for all transactions.",
-          duration: 5000,
-          className: "bg-green-50 border-green-200",
         })
         setFormData({ password: "", newPin: "", confirmPin: "" })
-        setOpen(false)
+        setTimeout(() => setOpen(false), 2000)
       } else {
-        toast({
-          title: "✗ Failed to Reset PIN",
+        setSuccessModal({
+          open: true,
+          isSuccess: false,
+          title: "Failed to Reset PIN",
           description: data.error || "Please check your password and try again.",
-          variant: "destructive",
-          duration: 5000,
         })
       }
     } catch (error) {
-      toast({
-        title: "✗ Network Error",
+      setSuccessModal({
+        open: true,
+        isSuccess: false,
+        title: "Network Error",
         description: "Failed to connect to server. Please check your connection and try again.",
-        variant: "destructive",
-        duration: 5000,
       })
     } finally {
       setLoading(false)
@@ -89,72 +96,82 @@ export function ResetPinDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Reset</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Reset PIN</DialogTitle>
-          <DialogDescription>Enter your password to reset your PIN</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="password">Account Password</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline">Reset</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset PIN</DialogTitle>
+            <DialogDescription>Enter your password to reset your PIN</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">Account Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="newPin">New PIN</Label>
+              <Input
+                id="newPin"
+                type="password"
+                maxLength={4}
+                placeholder="••••"
+                value={formData.newPin}
+                onChange={(e) => setFormData({ ...formData, newPin: e.target.value.replace(/\D/g, "") })}
+                className="text-center text-2xl tracking-widest"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPin">Confirm New PIN</Label>
+              <Input
+                id="confirmPin"
+                type="password"
+                maxLength={4}
+                placeholder="••••"
+                value={formData.confirmPin}
+                onChange={(e) => setFormData({ ...formData, confirmPin: e.target.value.replace(/\D/g, "") })}
+                className="text-center text-2xl tracking-widest"
+              />
+            </div>
+            <Button onClick={handleSubmit} disabled={loading} className="w-full">
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Resetting...
+                </>
+              ) : (
+                "Reset PIN"
+              )}
+            </Button>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="newPin">New PIN</Label>
-            <Input
-              id="newPin"
-              type="password"
-              maxLength={4}
-              placeholder="••••"
-              value={formData.newPin}
-              onChange={(e) => setFormData({ ...formData, newPin: e.target.value.replace(/\D/g, "") })}
-              className="text-center text-2xl tracking-widest"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPin">Confirm New PIN</Label>
-            <Input
-              id="confirmPin"
-              type="password"
-              maxLength={4}
-              placeholder="••••"
-              value={formData.confirmPin}
-              onChange={(e) => setFormData({ ...formData, confirmPin: e.target.value.replace(/\D/g, "") })}
-              className="text-center text-2xl tracking-widest"
-            />
-          </div>
-          <Button onClick={handleSubmit} disabled={loading} className="w-full">
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Resetting...
-              </>
-            ) : (
-              "Reset PIN"
-            )}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+      <SuccessModal
+        open={successModal.open}
+        onOpenChange={(open) => setSuccessModal({ ...successModal, open })}
+        isSuccess={successModal.isSuccess}
+        title={successModal.title}
+        description={successModal.description}
+        autoClose={successModal.isSuccess}
+      />
+    </>
   )
 }

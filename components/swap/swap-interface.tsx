@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowDownUp, Loader2, AlertCircle } from "lucide-react"
+import { ArrowDownUp, Loader2, AlertCircle, CheckCircle2, XCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -48,6 +48,17 @@ export function SwapInterface() {
   const [userRestriction, setUserRestriction] = useState<string | null>(null)
   const [userStatus, setUserStatus] = useState<string>("active")
   const [kycStatus, setKycStatus] = useState<string | null>(null)
+  const [swapResult, setSwapResult] = useState<{
+    open: boolean
+    isSuccess: boolean
+    title: string
+    description: string
+  }>({
+    open: false,
+    isSuccess: false,
+    title: "",
+    description: "",
+  })
   const { toast } = useToast()
 
   const fetchUserRestrictions = async () => {
@@ -79,7 +90,6 @@ export function SwapInterface() {
 
       if (res.ok) {
         setRate(data)
-        console.log("[v0] Swap rate updated:", data)
       }
     } catch (error) {
       console.error("[v0] Failed to fetch swap rate:", error)
@@ -166,8 +176,6 @@ export function SwapInterface() {
       return
     }
 
-    console.log("[v0] Executing swap:", { fromCurrency, toCurrency, amount: fromAmount })
-
     setSwapping(true)
     try {
       const res = await fetch("/api/swap/execute", {
@@ -182,56 +190,54 @@ export function SwapInterface() {
       })
       const data = await res.json()
 
-      console.log("[v0] Swap response:", { status: res.status, data })
-
       if (res.ok && data.success) {
-        toast({
-          title: "✓ Swap Successful!",
-          description:
-            data.message || `Successfully swapped ${fromAmount} ${fromCurrency} to ${toAmount} ${toCurrency}`,
-          duration: 5000,
+        setSwapResult({
+          open: true,
+          isSuccess: true,
+          title: "Swap Successful!",
+          description: `Successfully swapped ${fromAmount} ${fromCurrency} to ${toAmount} ${toCurrency}`,
         })
         setFromAmount("")
         setToAmount("")
         setPin("")
         setShowPinDialog(false)
-        fetchHistory()
-        fetchRate()
+        setTimeout(() => {
+          fetchHistory()
+          fetchRate()
+        }, 2000)
       } else {
         let errorMessage = data.error || "Failed to execute swap. Please try again."
 
         if (data.error?.includes("Invalid PIN")) {
-          errorMessage = "❌ Wrong PIN. Please try again."
+          errorMessage = "Wrong PIN. Please try again."
         } else if (data.error?.includes("Insufficient")) {
-          errorMessage = `❌ ${data.error}`
+          errorMessage = data.error
         } else if (data.error?.includes("KYC")) {
-          errorMessage = "❌ KYC verification required for swaps. Please complete your KYC first."
+          errorMessage = "KYC verification required for swaps. Please complete your KYC first."
         } else if (data.error?.includes("banned")) {
-          errorMessage = "❌ Your account has been banned and cannot perform swaps."
+          errorMessage = "Your account has been banned and cannot perform swaps."
         } else if (data.error?.includes("suspended")) {
-          errorMessage = "❌ Your account has been suspended. Please contact support."
+          errorMessage = "Your account has been suspended. Please contact support."
         } else if (data.error?.includes("restricted")) {
-          errorMessage = "❌ Swap feature is restricted for your account. Contact support for more information."
+          errorMessage = "Swap feature is restricted for your account. Contact support for more information."
         } else if (data.error?.includes("disabled")) {
-          errorMessage = "❌ Swaps are currently disabled by the platform."
+          errorMessage = "Swaps are currently disabled by the platform."
         }
 
-        console.error("[v0] Swap failed:", errorMessage)
-        toast({
+        setSwapResult({
+          open: true,
+          isSuccess: false,
           title: "Swap Failed",
           description: errorMessage,
-          variant: "destructive",
-          duration: 5000,
         })
         setPin("")
       }
     } catch (error) {
-      console.error("[v0] Swap error:", error)
-      toast({
-        title: "Swap Failed",
-        description: "Network error. Please check your connection and try again.",
-        variant: "destructive",
-        duration: 5000,
+      setSwapResult({
+        open: true,
+        isSuccess: false,
+        title: "Network Error",
+        description: "Failed to connect to server. Please check your connection and try again.",
       })
       setPin("")
     } finally {
@@ -449,6 +455,44 @@ export function SwapInterface() {
                 )}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={swapResult.open} onOpenChange={(open) => setSwapResult({ ...swapResult, open })}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex flex-col items-center gap-4 py-6">
+            {swapResult.isSuccess ? (
+              <>
+                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center animate-pulse">
+                  <CheckCircle2 className="w-8 h-8 text-green-600" />
+                </div>
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-bold text-green-600">{swapResult.title}</h2>
+                  <p className="text-muted-foreground">{swapResult.description}</p>
+                </div>
+                <Button onClick={() => setSwapResult({ ...swapResult, open: false })} className="w-full mt-4">
+                  Done
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+                  <XCircle className="w-8 h-8 text-red-600" />
+                </div>
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-bold text-red-600">{swapResult.title}</h2>
+                  <p className="text-muted-foreground text-sm">{swapResult.description}</p>
+                </div>
+                <Button
+                  onClick={() => setSwapResult({ ...swapResult, open: false })}
+                  variant="outline"
+                  className="w-full mt-4"
+                >
+                  Try Again
+                </Button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
