@@ -1,5 +1,5 @@
 import { RegisterForm } from "@/components/auth/register-form"
-import { Coins } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Suspense } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,14 +27,17 @@ function RegisterFormSkeleton() {
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        <Link href="/" className="flex items-center justify-center gap-2">
-          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-            <Coins className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <span className="text-2xl font-bold">Konza Coin</span>
+    <div className="min-h-screen bg-gradient-to-b from-background via-emerald-50 to-emerald-100 dark:via-emerald-950 dark:to-emerald-900 relative overflow-hidden flex flex-col justify-start pt-2 p-4">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-200/30 dark:bg-emerald-900/30 rounded-full blur-3xl -mr-48 -mt-48"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-100/20 dark:bg-emerald-800/20 rounded-full blur-3xl -ml-40 -mb-40"></div>
+      </div>
+
+      <div className="relative z-10 w-full max-w-md space-y-4">
+        <Link href="/" className="inline-flex items-center text-primary hover:text-primary/80 transition-colors">
+          <ArrowLeft className="w-5 h-5" />
         </Link>
+
         <Suspense fallback={<RegisterFormSkeleton />}>
           <RegisterForm />
         </Suspense>
