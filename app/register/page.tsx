@@ -1,4 +1,4 @@
-import { RegisterForm } from "@/components/register-form"
+import { RegisterForm } from "@/components/auth/register-form"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Suspense } from "react"

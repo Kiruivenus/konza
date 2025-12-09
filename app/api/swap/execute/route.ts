@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { verifySession } from "@/lib/session"
+import { verifySession } from "@/lib/auth/session"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
-import { generateTransactionHash } from "@/lib/wallet"
+import { generateTransactionHash } from "@/lib/utils/wallet"
 import bcrypt from "bcryptjs"
 
 export async function POST(request: NextRequest) {

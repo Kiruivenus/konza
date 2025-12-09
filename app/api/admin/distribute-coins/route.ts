@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getAdminUser } from "@/lib/admin"
-import { getDatabase } from "@/lib/connection"
+import { getAdminUser } from "@/lib/auth/admin"
+import { getDatabase } from "@/lib/db/connection"
 
 export async function POST(req: NextRequest) {
   try {

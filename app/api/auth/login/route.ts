@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getUsersCollection } from "@/lib/collections"
-import { verifyPassword } from "@/lib/password"
-import { createSession } from "@/lib/session"
-import { send2FAEmail } from "@/lib/smtp"
-import { generate6DigitCode } from "@/lib/tokens"
+import { getUsersCollection } from "@/lib/db/collections"
+import { verifyPassword } from "@/lib/auth/password"
+import { createSession } from "@/lib/auth/session"
+import { send2FAEmail } from "@/lib/email/smtp"
+import { generate6DigitCode } from "@/lib/email/tokens"
 
 export async function POST(request: NextRequest) {
   try {

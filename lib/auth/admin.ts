@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
-import { verifySession } from "@/lib/session"
-import { getUsersCollection } from "@/lib/collections"
+import { verifySession } from "@/lib/auth/session"
+import { getUsersCollection } from "@/lib/db/collections"
 import { ObjectId } from "mongodb"
 
 export async function getAdminUser(req: NextRequest) {

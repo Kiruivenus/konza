@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
-import { getKYCCollection, getUsersCollection } from "@/lib/collections"
+import { getSession } from "@/lib/auth/session"
+import { getKYCCollection, getUsersCollection } from "@/lib/db/collections"
 
 export async function GET() {
   try {

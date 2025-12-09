@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getUsersCollection, getPasswordResetCollection } from "@/lib/collections"
-import { generateResetToken } from "@/lib/tokens"
-import { sendPasswordResetEmail } from "@/lib/smtp"
+import { getUsersCollection, getPasswordResetCollection } from "@/lib/db/collections"
+import { generateResetToken } from "@/lib/email/tokens"
+import { sendPasswordResetEmail } from "@/lib/email/smtp"
 
 export async function POST(request: NextRequest) {
   try {

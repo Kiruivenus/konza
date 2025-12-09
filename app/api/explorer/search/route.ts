@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getTransactionsCollection } from "@/lib/collections"
+import { getTransactionsCollection } from "@/lib/db/collections"
 
 export async function GET(request: NextRequest) {
   try {

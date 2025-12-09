@@ -1,11 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
+import { getSession } from "@/lib/auth/session"
 import {
   getUsersCollection,
   getKYCCollection,
   getReferralsCollection,
   getSettingsCollection,
-} from "@/lib/collections"
+} from "@/lib/db/collections"
 import { ObjectId } from "mongodb"
 
 export async function POST(request: NextRequest) {

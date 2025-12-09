@@ -1,4 +1,4 @@
-import { TransactionSearch } from "@/components/transaction-search"
+import { TransactionSearch } from "@/components/explorer/transaction-search"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Coins } from "lucide-react"
 import Link from "next/link"

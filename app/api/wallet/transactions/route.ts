@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
-import { getUsersCollection, getTransactionsCollection } from "@/lib/collections"
+import { getSession } from "@/lib/auth/session"
+import { getUsersCollection, getTransactionsCollection } from "@/lib/db/collections"
 import { ObjectId } from "mongodb"
 
 export async function GET() {

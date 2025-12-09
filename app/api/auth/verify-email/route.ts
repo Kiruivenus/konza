@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getUsersCollection, getEmailVerificationCollection } from "@/lib/collections"
-import { isTokenExpired } from "@/lib/tokens"
+import { getUsersCollection, getEmailVerificationCollection } from "@/lib/db/collections"
+import { isTokenExpired } from "@/lib/email/tokens"
 
 export async function POST(request: NextRequest) {
   try {

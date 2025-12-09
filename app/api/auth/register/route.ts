@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getUsersCollection, getEmailVerificationCollection } from "@/lib/collections"
-import { hashPassword } from "@/lib/password"
-import { generateWalletAddress, generateReferralCode } from "@/lib/wallet"
-import { generate6DigitCode } from "@/lib/tokens"
-import { sendVerificationEmail } from "@/lib/smtp"
-import type { User } from "@/lib/types"
+import { getUsersCollection, getEmailVerificationCollection } from "@/lib/db/collections"
+import { hashPassword } from "@/lib/auth/password"
+import { generateWalletAddress, generateReferralCode } from "@/lib/utils/wallet"
+import { generate6DigitCode } from "@/lib/email/tokens"
+import { sendVerificationEmail } from "@/lib/email/smtp"
+import type { User } from "@/lib/db/types"
 
 export async function POST(request: NextRequest) {
   try {

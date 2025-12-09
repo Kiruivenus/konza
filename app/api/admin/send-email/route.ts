@@ -1,6 +1,6 @@
 import { getDb } from "@/lib/mongodb"
-import { sendAdminEmail } from "@/lib/smtp"
-import { verifySession } from "@/lib/session"
+import { sendAdminEmail } from "@/lib/email/smtp"
+import { verifySession } from "@/lib/auth/session"
 
 export async function POST(request: Request) {
   try {

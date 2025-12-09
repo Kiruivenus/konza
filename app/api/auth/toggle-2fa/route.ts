@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getUsersCollection } from "@/lib/collections"
-import { verifySession } from "@/lib/session"
+import { getUsersCollection } from "@/lib/db/collections"
+import { verifySession } from "@/lib/auth/session"
 import { ObjectId } from "mongodb"
 
 export async function POST(request: NextRequest) {

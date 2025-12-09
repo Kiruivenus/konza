@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { verifySession } from "@/lib/session"
+import { verifySession } from "@/lib/auth/session"
 import { getDb } from "@/lib/mongodb"
 
 export async function GET(request: NextRequest) {

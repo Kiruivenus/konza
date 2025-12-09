@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react"
 import Link from "next/link"
-import { KYCForm } from "@/components/kyc-form"
+import { KYCForm } from "@/components/kyc/kyc-form"
 import { format } from "date-fns"
 
 export default function KYCPage() {
