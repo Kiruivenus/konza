@@ -1,4 +1,4 @@
-import { SwapInterface } from "@/components/swap/swap-interface"
+import { SwapInterface } from "@/components/swap-interface"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 

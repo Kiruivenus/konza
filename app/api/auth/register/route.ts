@@ -1,8 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getUsersCollection } from "@/lib/db/collections"
-import { hashPassword } from "@/lib/auth/password"
-import { generateWalletAddress, generateReferralCode } from "@/lib/utils/wallet"
-import type { User } from "@/lib/db/types"
+import { getUsersCollection, getEmailVerificationCollection } from "@/lib/collections"
+import { hashPassword } from "@/lib/password"
+import { generateWalletAddress, generateReferralCode } from "@/lib/wallet"
+import { generate6DigitCode } from "@/lib/tokens"
+import { sendVerificationEmail } from "@/lib/smtp"
+import type { User } from "@/lib/types"
 
 export async function POST(request: NextRequest) {
   try {
@@ -64,6 +66,8 @@ export async function POST(request: NextRequest) {
       kycStatus: "Not Submitted",
       referralCode: userReferralCode,
       referredBy,
+      emailVerified: false,
+      twoFactorEnabled: false,
       profile: {},
       role: "user",
       createdAt: new Date(),
@@ -71,6 +75,20 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await usersCollection.insertOne(newUser)
+
+    const verificationCode = generate6DigitCode()
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
+
+    const emailVerificationCollection = await getEmailVerificationCollection()
+    await emailVerificationCollection.insertOne({
+      userId: result.insertedId,
+      email,
+      code: verificationCode,
+      expiresAt,
+      createdAt: new Date(),
+    })
+
+    await sendVerificationEmail(email, verificationCode)
 
     // If user was referred, create referral record
     if (referredBy) {
@@ -85,7 +103,7 @@ export async function POST(request: NextRequest) {
           referredId: result.insertedId,
           referredUsername: username,
           bonusAmount: 0,
-          status: "pending", // changed from "Pending" to "pending" for consistency
+          status: "pending",
           createdAt: new Date(),
         })
       }
@@ -93,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Account created successfully",
+      message: "Account created successfully. Please verify your email.",
       walletAddress,
       referralCode: userReferralCode,
     })

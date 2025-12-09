@@ -4,9 +4,9 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, Send, Download, WalletIcon } from "lucide-react"
-import { SendDialog } from "@/components/wallet/send-dialog"
-import { ReceiveDialog } from "@/components/wallet/receive-dialog"
-import { TransactionList } from "@/components/wallet/transaction-list"
+import { SendDialog } from "@/components/send-dialog"
+import { ReceiveDialog } from "@/components/receive-dialog"
+import { TransactionList } from "@/components/transaction-list"
 
 interface WalletData {
   balance: number

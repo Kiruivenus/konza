@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/auth/session"
-import { getUsersCollection, getTransactionsCollection, getSettingsCollection } from "@/lib/db/collections"
+import { getSession } from "@/lib/session"
+import { getUsersCollection, getTransactionsCollection, getSettingsCollection } from "@/lib/collections"
 import { ObjectId } from "mongodb"
-import { generateTransactionHash } from "@/lib/utils/wallet"
-import { verifyPin } from "@/lib/auth/password"
+import { generateTransactionHash } from "@/lib/wallet"
+import { verifyPin } from "@/lib/password"
 
 export async function POST(request: NextRequest) {
   try {

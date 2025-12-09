@@ -15,7 +15,6 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Konza Coin - Mine, Trade & Manage KZC",
   description: "A modern cryptocurrency mining and wallet platform for Konza Coin (KZC)",
-    generator: 'v0.app'
 }
 
 export default function RootLayout({

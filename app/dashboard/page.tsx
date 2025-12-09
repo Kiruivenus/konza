@@ -22,11 +22,11 @@ import {
   Coins,
   Copy,
 } from "lucide-react"
-import { SendDialog } from "@/components/wallet/send-dialog"
-import { ReceiveDialog } from "@/components/wallet/receive-dialog"
-import { PinSetupDialog } from "@/components/wallet/pin-setup-dialog"
-import { TransactionList } from "@/components/wallet/transaction-list"
-import { SwapInterface } from "@/components/swap/swap-interface"
+import { SendDialog } from "@/components/send-dialog"
+import { ReceiveDialog } from "@/components/receive-dialog"
+import { PinSetupDialog } from "@/components/pin-setup-dialog"
+import { TransactionList } from "@/components/transaction-list"
+import { SwapInterface } from "@/components/swap-interface"
 import Link from "next/link"
 import {
   DropdownMenu,
@@ -38,10 +38,11 @@ import {
 import { Progress } from "@/components/ui/progress"
 import { useToast } from "@/hooks/use-toast"
 import { Suspense } from "react"
-import { ChangePasswordDialog } from "@/components/settings/change-password-dialog"
-import { ChangePinDialog } from "@/components/settings/change-pin-dialog"
-import { ResetPinDialog } from "@/components/settings/reset-pin-dialog"
-import { EditProfileDialog } from "@/components/settings/edit-profile-dialog"
+import { ChangePasswordDialog } from "@/components/change-password-dialog"
+import { ChangePinDialog } from "@/components/change-pin-dialog"
+import { ResetPinDialog } from "@/components/reset-pin-dialog"
+import { EditProfileDialog } from "@/components/edit-profile-dialog"
+import { TwoFAToggle } from "@/components/two-fa-toggle"
 
 function DashboardContent() {
   const router = useRouter()
@@ -744,6 +745,7 @@ function DashboardContent() {
                   </div>
                   <ResetPinDialog />
                 </div>
+                <TwoFAToggle initialEnabled={user?.twoFactorEnabled || false} onToggle={fetchUserData} />
               </CardContent>
             </Card>
 

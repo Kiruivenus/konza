@@ -1,4 +1,4 @@
-import { MiningDashboard } from "@/components/mining/mining-dashboard"
+import { MiningDashboard } from "@/components/mining-dashboard"
 
 export default function MiningPage() {
   return (

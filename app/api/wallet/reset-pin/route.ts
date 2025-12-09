@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { verifySession } from "@/lib/auth/session"
+import { verifySession } from "@/lib/session"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import bcrypt from "bcryptjs"

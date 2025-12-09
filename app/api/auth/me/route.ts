@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/auth/session"
-import { getUsersCollection } from "@/lib/db/collections"
+import { getSession } from "@/lib/session"
+import { getUsersCollection } from "@/lib/collections"
 import { ObjectId } from "mongodb"
 
 export async function GET() {
@@ -32,6 +32,7 @@ export async function GET() {
         profile: user.profile,
         restrictions: user.restrictions || [],
         status: user.status || "active",
+        twoFactorEnabled: user.twoFactorEnabled || false,
       },
     })
   } catch (error) {

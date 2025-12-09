@@ -1,7 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getUsersCollection } from "@/lib/db/collections"
-import { verifyPassword } from "@/lib/auth/password"
-import { createSession } from "@/lib/auth/session"
+import { getUsersCollection } from "@/lib/collections"
+import { verifyPassword } from "@/lib/password"
+import { createSession } from "@/lib/session"
+import { send2FAEmail } from "@/lib/smtp"
+import { generate6DigitCode } from "@/lib/tokens"
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,11 +23,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
     }
 
+    if (!user.emailVerified) {
+      return NextResponse.json({ error: "Please verify your email first" }, { status: 403 })
+    }
+
     // Verify password
     const isValidPassword = await verifyPassword(password, user.password)
 
     if (!isValidPassword) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
+    }
+
+    if (user.twoFactorEnabled) {
+      const twoFactorCode = generate6DigitCode()
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+
+      await usersCollection.updateOne({ _id: user._id }, { $set: { twoFactorCode, twoFactorExpiresAt: expiresAt } })
+
+      await send2FAEmail(email, twoFactorCode)
+
+      return NextResponse.json({
+        success: false,
+        requires2FA: true,
+        message: "2FA code sent to your email",
+      })
     }
 
     // Create session
