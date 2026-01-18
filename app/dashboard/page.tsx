@@ -43,6 +43,7 @@ import { ChangePinDialog } from "@/components/settings/change-pin-dialog"
 import { ResetPinDialog } from "@/components/settings/reset-pin-dialog"
 import { EditProfileDialog } from "@/components/settings/edit-profile-dialog"
 import { TwoFAToggle } from "@/components/settings/two-fa-toggle"
+import { P2PMainContent } from "@/components/p2p/p2p-main-content"
 
 function DashboardContent() {
   const router = useRouter()
@@ -246,6 +247,10 @@ function DashboardContent() {
               <DropdownMenuItem onClick={() => setTab("settings")} className="cursor-pointer">
                 <SettingsIcon className="mr-2 h-4 w-4" />
                 Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTab("p2p")} className="cursor-pointer">
+                <Shield className="mr-2 h-4 w-4" />
+                P2P Trading
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
@@ -759,6 +764,12 @@ function DashboardContent() {
             </Card>
           </div>
         )}
+
+        {activeTab === "p2p" && (
+          <div className="space-y-6">
+            <P2PMainContent />
+          </div>
+        )}
       </main>
 
       {/* Navigation */}
@@ -803,6 +814,16 @@ function DashboardContent() {
             >
               <SettingsIcon className="h-5 w-5" />
               <span className="text-xs font-medium">Settings</span>
+            </button>
+
+            <button
+              onClick={() => setTab("p2p")}
+              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
+                activeTab === "p2p" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Shield className="h-5 w-5" />
+              <span className="text-xs font-medium">P2P Trading</span>
             </button>
           </div>
         </div>

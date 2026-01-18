@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists
     const existingUser = await usersCollection.findOne({
-      $or: [{ email }, { username }],
+      $or: [{ email: email.toLowerCase() }, { username }],
     })
 
     if (existingUser) {
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     // Create new user
     const newUser: User = {
-      email,
+      email: email.toLowerCase(),
       username,
       phone,
       password: hashedPassword,

@@ -33,6 +33,8 @@ export async function GET() {
         restrictions: user.restrictions || [],
         status: user.status || "active",
         twoFactorEnabled: user.twoFactorEnabled || false,
+        p2pAgentStatus: user.p2pAgentStatus || "none",
+        isP2PAgent: user.p2pAgentStatus === "approved",
       },
     })
   } catch (error) {

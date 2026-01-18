@@ -49,3 +49,38 @@ export async function getPasswordResetCollection() {
   const db = await getDatabase()
   return db.collection("passwordResets")
 }
+
+export async function getP2PAgentsCollection() {
+  const db = await getDatabase()
+  return db.collection("p2p_agents")
+}
+
+export async function getP2PTradesCollection() {
+  const db = await getDatabase()
+  return db.collection("p2p_trades")
+}
+
+export async function getP2POffersCollection() {
+  const db = await getDatabase()
+  return db.collection("p2p_offers")
+}
+
+export async function getPaymentMethodsCollection() {
+  const db = await getDatabase()
+  return db.collection("payment_methods")
+}
+
+export async function getP2PDisputesCollection() {
+  const db = await getDatabase()
+  return db.collection("p2p_disputes")
+}
+
+export async function getP2PRatingsCollection() {
+  const db = await getDatabase()
+  return db.collection("p2p_ratings")
+}
+
+export async function getEscrowCollection() {
+  const db = await getDatabase()
+  return db.collection("escrow")
+}

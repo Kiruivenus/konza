@@ -14,6 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { AlertCircle, CheckCircle, XCircle } from "lucide-react"
 
 interface TwoFAToggleProps {
   initialEnabled: boolean
@@ -24,18 +25,63 @@ export function TwoFAToggle({ initialEnabled, onToggle }: TwoFAToggleProps) {
   const { toast } = useToast()
   const [enabled, setEnabled] = useState(initialEnabled)
   const [isLoading, setIsLoading] = useState(false)
+  const [showWarningDialog, setShowWarningDialog] = useState(false)
   const [showCodeDialog, setShowCodeDialog] = useState(false)
+  const [showResultModal, setShowResultModal] = useState(false)
+  const [resultStatus, setResultStatus] = useState<"success" | "error">("success")
+  const [resultMessage, setResultMessage] = useState("")
   const [twoFACode, setTwoFACode] = useState("")
   const [isVerifying, setIsVerifying] = useState(false)
+  const [codeSent, setCodeSent] = useState(false)
 
   const handleToggle = async () => {
     if (enabled) {
-      setShowCodeDialog(true)
+      // Show warning dialog first
+      setShowWarningDialog(true)
       return
     }
 
     // If enabling 2FA, directly toggle
     await performToggle(true)
+  }
+
+  const handleConfirmDisable = async () => {
+    setShowWarningDialog(false)
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/auth/verify-2fa-disable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send-code" }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to send verification code",
+          variant: "destructive",
+        })
+        return
+      }
+
+      setCodeSent(true)
+      setShowCodeDialog(true)
+      toast({
+        title: "Code Sent",
+        description: "A verification code has been sent to your email",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send verification code",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const performToggle = async (newState: boolean) => {
@@ -51,26 +97,21 @@ export function TwoFAToggle({ initialEnabled, onToggle }: TwoFAToggleProps) {
       const data = await response.json()
 
       if (!response.ok) {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to update 2FA setting",
-          variant: "destructive",
-        })
+        setResultStatus("error")
+        setResultMessage(data.error || "Failed to update 2FA setting")
+        setShowResultModal(true)
         return
       }
 
       setEnabled(newState)
-      toast({
-        title: "Success",
-        description: data.message,
-      })
+      setResultStatus("success")
+      setResultMessage(newState ? "2FA has been enabled successfully" : "2FA has been disabled successfully")
+      setShowResultModal(true)
       onToggle?.()
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update 2FA setting",
-        variant: "destructive",
-      })
+      setResultStatus("error")
+      setResultMessage("Failed to update 2FA setting")
+      setShowResultModal(true)
     } finally {
       setIsLoading(false)
     }
@@ -91,17 +132,15 @@ export function TwoFAToggle({ initialEnabled, onToggle }: TwoFAToggleProps) {
       const response = await fetch("/api/auth/verify-2fa-disable", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: twoFACode }),
+        body: JSON.stringify({ action: "verify-code", code: twoFACode }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        toast({
-          title: "Error",
-          description: data.error || "Invalid verification code",
-          variant: "destructive",
-        })
+        setResultStatus("error")
+        setResultMessage("Incorrect verification code. Please check your email and try again.")
+        setShowResultModal(true)
         return
       }
 
@@ -109,12 +148,11 @@ export function TwoFAToggle({ initialEnabled, onToggle }: TwoFAToggleProps) {
       await performToggle(false)
       setShowCodeDialog(false)
       setTwoFACode("")
+      setCodeSent(false)
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to verify code",
-        variant: "destructive",
-      })
+      setResultStatus("error")
+      setResultMessage("Failed to verify code")
+      setShowResultModal(true)
     } finally {
       setIsVerifying(false)
     }
@@ -147,6 +185,41 @@ export function TwoFAToggle({ initialEnabled, onToggle }: TwoFAToggleProps) {
         </CardContent>
       </Card>
 
+      {/* Warning Dialog */}
+      <Dialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Disable 2FA?
+            </DialogTitle>
+            <DialogDescription>Are you sure you want to disable two-factor authentication?</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800">
+                <strong>⚠️ Warning:</strong> Disabling 2FA makes your account less secure. Your account will only be
+                protected by your password.
+              </p>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>ℹ️ Info:</strong> To disable 2FA, you'll need to verify your identity using an email code.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowWarningDialog(false)} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmDisable} disabled={isLoading} variant="destructive">
+              Continue to Disable
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Code Verification Dialog */}
       <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -164,8 +237,9 @@ export function TwoFAToggle({ initialEnabled, onToggle }: TwoFAToggleProps) {
                 value={twoFACode}
                 onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 maxLength={6}
-                className="text-center text-2xl tracking-widest font-mono"
+                className="text-center text-2xl tracking-widest font-mono mt-2"
               />
+              <p className="text-xs text-gray-500 mt-2">Check your email for the code</p>
             </div>
           </div>
           <DialogFooter>
@@ -174,6 +248,37 @@ export function TwoFAToggle({ initialEnabled, onToggle }: TwoFAToggleProps) {
             </Button>
             <Button onClick={handleVerifyCode} disabled={isVerifying || twoFACode.length !== 6}>
               {isVerifying ? "Verifying..." : "Verify & Disable"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {resultStatus === "success" ? (
+                <>
+                  <CheckCircle className="h-6 w-6 text-green-500" />
+                  Success
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-6 w-6 text-red-500" />
+                  Failed
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className={resultStatus === "success" ? "text-green-700" : "text-red-700"}>{resultMessage}</p>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => setShowResultModal(false)}
+              className={resultStatus === "success" ? "bg-green-500 hover:bg-green-600" : ""}
+            >
+              {resultStatus === "success" ? "OK" : "Try Again"}
             </Button>
           </DialogFooter>
         </DialogContent>

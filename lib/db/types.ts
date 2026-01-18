@@ -149,3 +149,125 @@ export interface PasswordReset {
   expiresAt: Date
   createdAt: Date
 }
+
+export interface P2PAgent {
+  _id?: ObjectId
+  userId: ObjectId
+  username: string
+  email: string
+  kycVerified: boolean
+  agentVerified: boolean
+  verifiedAt?: Date
+  verifiedBy?: string
+  twoFactorEnabled: boolean
+  securityDeposit: number
+  totalTrades: number
+  completionRate: number
+  rating: number
+  totalRatings: number
+  status: "active" | "suspended" | "banned"
+  paymentMethods: string[]
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface P2POffer {
+  _id?: ObjectId
+  agentId: ObjectId
+  username: string
+  coin: "KZC" | "USDT"
+  type: "buy" | "sell"
+  price: number
+  minLimit: number
+  maxLimit: number
+  available: number
+  paymentMethods: string[]
+  terms?: string
+  status: "active" | "inactive"
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface P2PTrade {
+  _id?: ObjectId
+  offerId: ObjectId
+  buyerId: ObjectId
+  buyerUsername: string
+  buyerEmail: string
+  sellerId: ObjectId
+  sellerUsername: string
+  sellerEmail: string
+  coin: "KZC" | "USDT"
+  amount: number
+  pricePerUnit: number
+  totalPrice: number
+  paymentMethod: string
+  status: "pending" | "payment_waiting" | "payment_confirmed" | "completed" | "cancelled" | "disputed"
+  escrowAmount: number
+  platformFee: number
+  buyerMarkedPaid: boolean
+  sellerConfirmedPayment: boolean
+  timeoutAt?: Date
+  completedAt?: Date
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface PaymentMethod {
+  _id?: ObjectId
+  userId: ObjectId
+  username: string
+  type: "mPesa" | "bank" | "paypal" | "airtelMoney" | "crypto"
+  accountName: string
+  accountNumber: string
+  bankName?: string
+  phoneNumber?: string
+  walletAddress?: string
+  isDefault: boolean
+  verified: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface P2PDispute {
+  _id?: ObjectId
+  tradeId: ObjectId
+  reporterId: ObjectId
+  reporterUsername: string
+  respondentId: ObjectId
+  respondentUsername: string
+  reason: string
+  description: string
+  evidence: string[] // URLs to uploaded proof images
+  status: "open" | "investigating" | "resolved"
+  resolution?: "refund_buyer" | "release_seller" | "partial_refund"
+  resolvedBy?: string
+  resolutionNotes?: string
+  createdAt: Date
+  resolvedAt?: Date
+}
+
+export interface P2PRating {
+  _id?: ObjectId
+  tradeId: ObjectId
+  raterId: ObjectId
+  raterUsername: string
+  rateeId: ObjectId
+  rateeUsername: string
+  rating: number // 1-5 stars
+  comment: string
+  createdAt: Date
+}
+
+export interface Escrow {
+  _id?: ObjectId
+  tradeId: ObjectId
+  coin: "KZC" | "USDT"
+  amount: number
+  holdingAddress: string
+  status: "locked" | "released" | "refunded"
+  releasedTo?: string
+  releaseReason?: string
+  createdAt: Date
+  releasedAt?: Date
+}
